@@ -77,6 +77,35 @@ Both functions return an `%Ecto.Query{}`, so you pipe it into your own repo. Thi
 - Dates: `2024-01-01`
 - GUIDs: `00000000-0000-0000-0000-000000000000`
 
+## Not yet supported
+
+The following OData v4 features are not currently implemented:
+
+### Query options
+
+- `$select` — field projection
+- `$expand` — loading related entities
+- `$count` — total result count
+- `$search` — free-text search
+
+### Filter functions
+
+- String functions: `contains()`, `startswith()`, `endswith()`, `tolower()`, `toupper()`, `trim()`, `length()`, `substring()`, `concat()`
+- Date functions: `year()`, `month()`, `day()`, `hour()`, `minute()`, `second()`
+- Math functions: `round()`, `floor()`, `ceiling()`
+
+### Filter operators
+
+- `not` — logical negation
+- Lambda operators: `any()`, `all()`
+
+### Path traversal
+
+- Navigation properties: `Orders/Customer/Name eq 'John'`
+- Collection indexing
+
+Contributions are welcome. Open an issue or PR on [GitHub](https://github.com/EarliestFall988/ex_odata4).
+
 ## Error handling
 
 If a schema name is not found in your config, a descriptive error is raised:
