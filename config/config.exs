@@ -6,3 +6,7 @@ config :ex_odata4, ExOdata4.Repo,
 
 config :ex_odata4,
   ecto_repos: []
+
+if config_env() == :test do
+  import_config "test.exs"
+end

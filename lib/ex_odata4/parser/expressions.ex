@@ -33,6 +33,25 @@ defmodule ExOdata4.Parser.Expressions do
     |> post_traverse({:build_binary_op, []})
   end
 
+  def string_function_call do
+    choice([
+      string_fn("contains"),
+      string_fn("startswith"),
+      string_fn("endswith")
+    ])
+  end
+
+  defp string_fn(name) do
+    ignore(string(name))
+    |> ignore(string("("))
+    |> concat(odata_identifier())
+    |> ignore(string(","))
+    |> ignore(optional(Literals.whitespace()))
+    |> concat(Literals.string_literal())
+    |> ignore(string(")"))
+    |> post_traverse({:build_string_function_call, [String.to_atom(name)]})
+  end
+
   def common_expr do
     comparison_expr()
     |> optional(

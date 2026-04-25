@@ -39,6 +39,11 @@ defmodule ExOdata4.Parser do
     end)
   end
 
+  defp build_string_function_call(rest, args, context, _line, _offset, name) do
+    [field_name, literal] = Enum.reverse(args)
+    {rest, [%AST.FunctionCall{name: name, args: [%AST.Field{name: field_name}, literal]}], context}
+  end
+
   defp build_binary_op(rest, args, context, _line, _offset) do
     [field_name, op, literal] = Enum.reverse(args)
 
@@ -133,12 +138,14 @@ defmodule ExOdata4.Parser do
     |> parsec(:common_expr)
     |> ignore(optional(Literals.whitespace()))
     |> ignore(string(")"))
+
   )
 
   defcombinatorp(
     :common_expr,
     choice([
       parsec(:paren_expr),
+      Expressions.string_function_call(),
       Expressions.comparison_expr()
     ])
     |> optional(

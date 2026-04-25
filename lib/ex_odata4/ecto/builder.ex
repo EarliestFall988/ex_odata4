@@ -15,6 +15,18 @@ defmodule ExOdata4.Ecto.Builder do
     where(query, ^build_expr(expr))
   end
 
+  defp build_expr(%AST.FunctionCall{name: :contains, args: [%AST.Field{name: f}, %AST.Literal{value: v}]}) do
+    dynamic([q], like(field(q, ^String.to_atom(f)), ^"%#{v}%"))
+  end
+
+  defp build_expr(%AST.FunctionCall{name: :startswith, args: [%AST.Field{name: f}, %AST.Literal{value: v}]}) do
+    dynamic([q], like(field(q, ^String.to_atom(f)), ^"#{v}%"))
+  end
+
+  defp build_expr(%AST.FunctionCall{name: :endswith, args: [%AST.Field{name: f}, %AST.Literal{value: v}]}) do
+    dynamic([q], like(field(q, ^String.to_atom(f)), ^"%#{v}"))
+  end
+
   defp build_expr(%AST.BinaryOp{op: :eq, left: %AST.Field{name: f}, right: %AST.Literal{value: v}}) do
     dynamic([q], field(q, ^String.to_atom(f)) == ^v)
   end

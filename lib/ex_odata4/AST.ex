@@ -24,4 +24,9 @@ defmodule ExOdata4.AST do
     defstruct [:field, :direction]
     # %OrderbyItem{field: "Amount", direction: :desc}
   end
+
+  defmodule FunctionCall do
+    defstruct [:name, :args]
+    # %FunctionCall{name: :contains, args: [%Field{name: "Name"}, %Literal{type: :string, value: "John"}]}
+  end
 end

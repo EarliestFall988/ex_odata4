@@ -67,6 +67,21 @@ Both functions return an `%Ecto.Query{}`, so you pipe it into your own repo. Thi
 | `and` | Logical and |
 | `or` | Logical or |
 
+### Supported filter functions
+
+| Function | Example | Translates to |
+| --- | --- | --- |
+| `contains` | `contains(Name, 'John')` | `LIKE '%John%'` |
+| `startswith` | `startswith(Name, 'J')` | `LIKE 'J%'` |
+| `endswith` | `endswith(Email, '.com')` | `LIKE '%.com'` |
+
+Functions can be combined with logical operators:
+
+```text
+$filter=contains(Name, 'John') and Amount gt 100
+$filter=startswith(Status, 'act') or endswith(Email, '.com')
+```
+
 ### Supported literal types
 
 - Strings: `'hello'`
@@ -90,7 +105,7 @@ The following OData v4 features are not currently implemented:
 
 ### Filter functions
 
-- String functions: `contains()`, `startswith()`, `endswith()`, `tolower()`, `toupper()`, `trim()`, `length()`, `substring()`, `concat()`
+- String functions: `tolower()`, `toupper()`, `trim()`, `length()`, `substring()`, `concat()`
 - Date functions: `year()`, `month()`, `day()`, `hour()`, `minute()`, `second()`
 - Math functions: `round()`, `floor()`, `ceiling()`
 

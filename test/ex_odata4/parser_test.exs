@@ -125,4 +125,37 @@ defmodule ExOdata4.ParserTest do
     assert {:ok, %ExOdata4.Query{filter: [_ | _], top: 50, skip: 0, orderby: [_ | _]}} =
              Parser.parse_query("$filter=Amount gt 1000&$top=50&$skip=0&$orderby=Amount desc")
   end
+
+  test "string function expressions parse" do
+    assert_parses_filter("contains(Name, 'John')")
+    assert_parses_filter("startswith(Name, 'John')")
+    assert_parses_filter("endswith(Name, 'John')")
+  end
+
+  test "string functions produce correct AST" do
+    alias ExOdata4.AST
+
+    assert {:ok, [%AST.FunctionCall{name: :contains, args: [%AST.Field{name: "Name"}, %AST.Literal{type: :string, value: "John"}]}], "", _, _, _} =
+             Parser.parse_filter("contains(Name, 'John')")
+
+    assert {:ok, [%AST.FunctionCall{name: :startswith, args: [%AST.Field{name: "Status"}, %AST.Literal{type: :string, value: "act"}]}], "", _, _, _} =
+             Parser.parse_filter("startswith(Status, 'act')")
+
+    assert {:ok, [%AST.FunctionCall{name: :endswith, args: [%AST.Field{name: "Email"}, %AST.Literal{type: :string, value: ".com"}]}], "", _, _, _} =
+             Parser.parse_filter("endswith(Email, '.com')")
+  end
+
+  test "string functions combined with logical operators" do
+    assert_parses_filter("contains(Name, 'John') and Amount gt 100")
+    assert_parses_filter("startswith(Status, 'act') or endswith(Email, '.com')")
+    assert_parses_filter("contains(Name, 'John') and contains(Status, 'active')")
+  end
+
+  test "string functions in parse_query" do
+    assert {:ok, %ExOdata4.Query{filter: [%ExOdata4.AST.FunctionCall{name: :contains}]}} =
+             Parser.parse_query("$filter=contains(Name, 'John')")
+
+    assert {:ok, %ExOdata4.Query{filter: [_ | _], top: 10}} =
+             Parser.parse_query("$filter=contains(Name, 'John')&$top=10")
+  end
 end
