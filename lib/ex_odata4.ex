@@ -1,6 +1,33 @@
 defmodule ExOdata4 do
   @moduledoc """
-  Documentation for `ExOdata4`.
+  An OData v4 query parser and Ecto query builder.
+
+  Parses OData query strings or full URIs and returns `Ecto.Query` structs
+  ready to execute against your own repo.
+
+  ## Configuration
+
+  Map OData entity names to your Ecto schema modules in `config/config.exs`:
+
+      config :ex_odata4, schemas: %{
+        "Orders" => MyApp.Orders,
+        "Products" => MyApp.Products
+      }
+
+  ## Usage
+
+  Parse a full OData URI:
+
+      ExOdata4.parse_uri("/Orders?\\$filter=Amount gt 1000&\\$top=25")
+      |> MyApp.Repo.all()
+
+  Or parse a query string directly when you already know the entity name:
+
+      ExOdata4.get("Orders", "\\$filter=Status eq 'active'&\\$top=10")
+      |> MyApp.Repo.all()
+
+  Both functions return an `%Ecto.Query{}` — execute it with whichever repo
+  and database adapter your application uses.
   """
   def parse_uri(uri) do
     [path | query] = String.split(uri, "?")
