@@ -9,6 +9,7 @@ defmodule ExOdata4.MixProject do
       start_permanent: Mix.env() == :prod,
       description: "An OData v4 query parser and Ecto query builder.",
       package: package(),
+      docs: docs(),
       deps: deps(),
       elixirc_paths: elixirc_paths(Mix.env())
     ]
@@ -16,6 +17,20 @@ defmodule ExOdata4.MixProject do
 
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
+
+  defp docs do
+    [
+      main: "readme",
+      extras: [
+        "README.md",
+        "guides/getting-started.md",
+        "guides/goals.md"
+      ],
+      groups_for_extras: [
+        Guides: ~r/guides\/.*/
+      ]
+    ]
+  end
 
   defp package do
     [
