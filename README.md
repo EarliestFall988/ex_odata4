@@ -9,7 +9,7 @@ Add `ex_odata4` to your dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:ex_odata4, "~> 0.2.0"}
+    {:ex_odata4, "~> 0.2.2"}
   ]
 end
 ```
@@ -133,13 +133,17 @@ $filter=tolower(Status) eq 'active' or year(Date) gt 2023
 
 ## Not yet supported
 
-- `$select` — field projection
-- `$expand` — loading related entities
-- `$count` — total result count
-- `not` — logical negation
-- Math functions: `round()`, `floor()`, `ceiling()`
-- Lambda operators: `any()`, `all()`
-- Navigation properties
+The goal is near-parity with the OData v4 spec. Features are shipped in order of practical value rather than spec completeness.
+
+| Feature | Notes |
+| --- | --- |
+| `$select` | Field projection |
+| `$count` | Total result count |
+| `not` | Logical negation |
+| Math functions | `round()`, `floor()`, `ceiling()` |
+| `$expand` | Loading related entities — planned, takes time to get right |
+| Navigation properties | e.g. `Orders/Customer/Name eq 'John'` — planned |
+| Lambda operators | `any()`, `all()` |
 
 Contributions are welcome. Open an issue or PR on [GitHub](https://github.com/EarliestFall988/ex_odata4).
 

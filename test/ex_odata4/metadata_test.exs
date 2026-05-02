@@ -76,6 +76,54 @@ defmodule ExOdata4.MetadataTest do
     end
   end
 
+  describe "generate_service/2 - combined document" do
+    test "returns a valid XML string" do
+      xml = Metadata.generate_service(%{"Trades" => Trade, "AllTypes" => AllTypes})
+      assert is_binary(xml)
+      assert xml =~ ~s(<?xml version="1.0" encoding="utf-8"?>)
+    end
+
+    test "contains the OData edmx envelope" do
+      xml = Metadata.generate_service(%{"Trades" => Trade})
+      assert xml =~ ~s(edmx:Edmx)
+      assert xml =~ ~s(Version="4.0")
+    end
+
+    test "includes an EntityType for each schema" do
+      xml = Metadata.generate_service(%{"Trades" => Trade, "AllTypes" => AllTypes})
+      assert xml =~ ~s(EntityType Name="Trade")
+      assert xml =~ ~s(EntityType Name="AllTypes")
+    end
+
+    test "includes an EntitySet for each schema" do
+      xml = Metadata.generate_service(%{"Trades" => Trade, "AllTypes" => AllTypes})
+      assert xml =~ ~s(EntitySet Name="Trades")
+      assert xml =~ ~s(EntitySet Name="AllTypes")
+    end
+
+    test "all entity sets are in a single EntityContainer" do
+      xml = Metadata.generate_service(%{"Trades" => Trade, "AllTypes" => AllTypes})
+      assert [_] = Regex.scan(~r/<EntityContainer/, xml)
+    end
+
+    test "all entity types are in a single Schema" do
+      xml = Metadata.generate_service(%{"Trades" => Trade, "AllTypes" => AllTypes})
+      assert [_] = Regex.scan(~r/<Schema/, xml)
+    end
+
+    test "namespace option is applied to all entity types" do
+      xml = Metadata.generate_service(%{"Trades" => Trade}, namespace: "MyApp")
+      assert xml =~ ~s(Namespace="MyApp")
+      assert xml =~ ~s(EntityType="MyApp.Trade")
+    end
+
+    test "properties of each schema are included" do
+      xml = Metadata.generate_service(%{"Trades" => Trade, "AllTypes" => AllTypes})
+      assert xml =~ ~s(Property Name="Amount")
+      assert xml =~ ~s(Property Name="StringField")
+    end
+  end
+
   describe "generate/2 - EDM type mapping" do
     test "string maps to Edm.String" do
       xml = Metadata.generate(AllTypes)

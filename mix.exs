@@ -4,7 +4,7 @@ defmodule ExOdata4.MixProject do
   def project do
     [
       app: :ex_odata4,
-      version: "0.2.0",
+      version: "0.2.2",
       elixir: "~> 1.14",
       start_permanent: Mix.env() == :prod,
       description: "An OData v4 query parser and Ecto query builder.",
@@ -24,6 +24,7 @@ defmodule ExOdata4.MixProject do
       extras: [
         "README.md",
         "guides/getting-started.md",
+        "guides/phoenix.md",
         "guides/goals.md"
       ],
       groups_for_extras: [

@@ -14,6 +14,8 @@ Teams that have an Elixir/Ecto-backed service and need to give other teams acces
 
 **$metadata first.** Power BI and Excel hit `/$metadata` on connection to discover entity types and field names. ExOdata4 generates this document automatically from your Ecto schema so connecting a new data source is frictionless.
 
-## What's out of scope
+## Roadmap
 
-ExOdata4 does not aim for full OData v4 compliance. Features like `$expand`, navigation properties, and lambda operators are not planned. The focus is on the query capabilities that BI tools actually use day to day.
+The goal is near-parity with the OData v4 spec — not perfect compliance, but broad enough coverage that teams can use it for real work without hitting walls.
+
+Features are shipped in order of practical value rather than spec completeness. Navigation properties and `$expand` are planned but take time to get right. In the meantime the focus is on getting the high-value query features out — filtering, sorting, pagination, functions, and metadata — which cover the vast majority of what BI tools actually need.
