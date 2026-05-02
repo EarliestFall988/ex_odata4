@@ -20,7 +20,7 @@ defmodule ExOdata4.MixProject do
   defp package do
     [
       licenses: ["MIT"],
-      links: %{"GitHub" => "https://github.com/your-org/ex_odata4"}
+      links: %{"GitHub" => "https://github.com/EarliestFall988/ex_odata4"}
     ]
   end
 

@@ -33,12 +33,38 @@ defmodule ExOdata4.Parser.Expressions do
     |> post_traverse({:build_binary_op, []})
   end
 
+  @string_functions %{
+    "contains" => :contains,
+    "startswith" => :startswith,
+    "endswith" => :endswith
+  }
+
+  @unary_functions %{
+    "tolower" => :tolower,
+    "toupper" => :toupper,
+    "year"    => :year,
+    "month"   => :month,
+    "day"     => :day,
+    "hour"    => :hour
+  }
+
   def string_function_call do
     choice([
       string_fn("contains"),
       string_fn("startswith"),
       string_fn("endswith")
     ])
+  end
+
+  def unary_function_comparison_expr do
+    choice(Enum.map(@unary_functions, fn {name, atom} ->
+      ignore(string(name <> "("))
+      |> concat(odata_identifier())
+      |> ignore(string(")"))
+      |> concat(comparison_op())
+      |> concat(Literals.primitive_literal())
+      |> post_traverse({:build_unary_function_binary_op, [atom]})
+    end))
   end
 
   defp string_fn(name) do
@@ -49,7 +75,7 @@ defmodule ExOdata4.Parser.Expressions do
     |> ignore(optional(Literals.whitespace()))
     |> concat(Literals.string_literal())
     |> ignore(string(")"))
-    |> post_traverse({:build_string_function_call, [String.to_atom(name)]})
+    |> post_traverse({:build_string_function_call, [@string_functions[name]]})
   end
 
   def common_expr do

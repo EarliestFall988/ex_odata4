@@ -1,6 +1,6 @@
 # ExOdata4
 
-An OData v4 query parser and Ecto query builder for Elixir. Parse OData query strings or full URIs and get back Ecto queries ready to execute against your own repo.
+An OData v4 query parser and Ecto query builder for Elixir. Parse OData query strings or full URIs and get back Ecto queries ready to execute against your own repo. Designed for exposing internal Elixir services to BI tools like Power BI and Excel.
 
 ## Installation
 
@@ -16,7 +16,7 @@ end
 
 ## Configuration
 
-Tell the library which OData entity names map to your Ecto schemas in `config/config.exs`:
+Register your Ecto schemas in `config/config.exs`:
 
 ```elixir
 config :ex_odata4, schemas: %{
@@ -25,7 +25,7 @@ config :ex_odata4, schemas: %{
 }
 ```
 
-The key is the entity name as it appears in the OData URI. The value is the Ecto schema module.
+OData field names are automatically derived from your schema — Ecto's snake_case atoms become PascalCase OData names. So `:first_name` is exposed as `FirstName`, `:amount` as `Amount`, and so on. No additional mapping is required.
 
 ## Usage
 
@@ -39,11 +39,27 @@ ExOdata4.parse_uri("/Orders?$filter=Amount gt 1000&$top=25&$skip=0")
 ### Parsing a query string directly
 
 ```elixir
-ExOdata4.get("Orders", "$filter=Status eq 'active'&$orderby=CreatedAt desc&$top=10")
+ExOdata4.get("Orders", "$filter=Status eq 'active'&$orderby=Amount desc&$top=10")
 |> MyApp.Repo.all()
 ```
 
-Both functions return an `%Ecto.Query{}`, so you pipe it into your own repo. This means the library has no opinion about your database, connection pool, or repo configuration.
+Both functions return an `%Ecto.Query{}` ready to pipe into your repo.
+
+### $metadata
+
+For Power BI and Excel, serve the `$metadata` document from your router:
+
+```elixir
+# In your Phoenix router or Plug
+get "/$metadata", fn conn, _ ->
+  xml = ExOdata4.Metadata.generate(MyApp.Orders, namespace: "MyApp")
+  conn
+  |> put_resp_content_type("application/xml")
+  |> send_resp(200, xml)
+end
+```
+
+`generate/2` accepts an optional `:namespace` (defaults to `"Default"`).
 
 ## Supported OData query options
 
@@ -52,9 +68,10 @@ Both functions return an `%Ecto.Query{}`, so you pipe it into your own repo. Thi
 | `$filter` | `$filter=Name eq 'John'` |
 | `$top` | `$top=25` |
 | `$skip` | `$skip=50` |
-| `$orderby` | `$orderby=Amount desc` |
+| `$orderby` | `$orderby=Amount desc,Name asc` |
+| `$metadata` | `GET /$metadata` |
 
-### Supported filter operators
+### Filter operators
 
 | Operator | Meaning |
 | --- | --- |
@@ -67,19 +84,25 @@ Both functions return an `%Ecto.Query{}`, so you pipe it into your own repo. Thi
 | `and` | Logical and |
 | `or` | Logical or |
 
-### Supported filter functions
+### Filter functions
 
-| Function | Example | Translates to |
+| Function | Example | SQL |
 | --- | --- | --- |
-| `contains` | `contains(Name, 'John')` | `LIKE '%John%'` |
-| `startswith` | `startswith(Name, 'J')` | `LIKE 'J%'` |
+| `contains` | `contains(Name, 'Jo')` | `LIKE '%Jo%'` |
+| `startswith` | `startswith(Name, 'Jo')` | `LIKE 'Jo%'` |
 | `endswith` | `endswith(Email, '.com')` | `LIKE '%.com'` |
+| `tolower` | `tolower(Name) eq 'john'` | `lower(name) = 'john'` |
+| `toupper` | `toupper(Name) eq 'JOHN'` | `upper(name) = 'JOHN'` |
+| `year` | `year(Date) eq 2024` | `extract(year from date) = 2024` |
+| `month` | `month(Date) eq 1` | `extract(month from date) = 1` |
+| `day` | `day(Date) eq 15` | `extract(day from date) = 15` |
+| `hour` | `hour(Timestamp) gt 8` | `extract(hour from timestamp) > 8` |
 
 Functions can be combined with logical operators:
 
 ```text
 $filter=contains(Name, 'John') and Amount gt 100
-$filter=startswith(Status, 'act') or endswith(Email, '.com')
+$filter=tolower(Status) eq 'active' or year(Date) gt 2023
 ```
 
 ### Supported literal types
@@ -90,50 +113,35 @@ $filter=startswith(Status, 'act') or endswith(Email, '.com')
 - Booleans: `true`, `false`
 - Null: `null`
 - Dates: `2024-01-01`
+- DateTimeOffset: `2024-01-01T00:00:00Z`
 - GUIDs: `00000000-0000-0000-0000-000000000000`
 
+### EDM type mapping
+
+`$metadata` automatically maps Ecto types to OData EDM types:
+
+| Ecto type | EDM type |
+| --- | --- |
+| `:string` | `Edm.String` |
+| `:integer` | `Edm.Int32` |
+| `:float` | `Edm.Double` |
+| `:decimal` | `Edm.Decimal` |
+| `:boolean` | `Edm.Boolean` |
+| `:date` | `Edm.Date` |
+| `:utc_datetime` / `:naive_datetime` | `Edm.DateTimeOffset` |
+| `:binary_id` | `Edm.Guid` |
+
 ## Not yet supported
-
-The following OData v4 features are not currently implemented:
-
-### Query options
 
 - `$select` — field projection
 - `$expand` — loading related entities
 - `$count` — total result count
-- `$search` — free-text search
-
-### Filter functions
-
-- String functions: `tolower()`, `toupper()`, `trim()`, `length()`, `substring()`, `concat()`
-- Date functions: `year()`, `month()`, `day()`, `hour()`, `minute()`, `second()`
-- Math functions: `round()`, `floor()`, `ceiling()`
-
-### Filter operators
-
 - `not` — logical negation
+- Math functions: `round()`, `floor()`, `ceiling()`
 - Lambda operators: `any()`, `all()`
-
-### Path traversal
-
-- Navigation properties: `Orders/Customer/Name eq 'John'`
-- Collection indexing
+- Navigation properties
 
 Contributions are welcome. Open an issue or PR on [GitHub](https://github.com/EarliestFall988/ex_odata4).
-
-## Error handling
-
-If a schema name is not found in your config, a descriptive error is raised:
-
-```text
-No schema configured for "Orders".
-
-Add it to your config.exs:
-
-    config :ex_odata4, schemas: %{
-      "Orders" => MyApp.Orders
-    }
-```
 
 ## License
 

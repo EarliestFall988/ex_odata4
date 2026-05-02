@@ -158,4 +158,40 @@ defmodule ExOdata4.ParserTest do
     assert {:ok, %ExOdata4.Query{filter: [_ | _], top: 10}} =
              Parser.parse_query("$filter=contains(Name, 'John')&$top=10")
   end
+
+  test "unary function expressions parse" do
+    assert_parses_filter("tolower(Name) eq 'john'")
+    assert_parses_filter("toupper(Name) eq 'JOHN'")
+    assert_parses_filter("year(Date) eq 2024")
+    assert_parses_filter("month(Date) eq 1")
+    assert_parses_filter("day(Date) eq 15")
+    assert_parses_filter("hour(Timestamp) eq 10")
+  end
+
+  test "unary functions produce correct AST" do
+    alias ExOdata4.AST
+
+    assert {:ok, [%AST.BinaryOp{
+      op: :eq,
+      left: %AST.FunctionCall{name: :tolower, args: [%AST.Field{name: "Name"}]},
+      right: %AST.Literal{type: :string, value: "john"}
+    }], "", _, _, _} = Parser.parse_filter("tolower(Name) eq 'john'")
+
+    assert {:ok, [%AST.BinaryOp{
+      op: :eq,
+      left: %AST.FunctionCall{name: :year, args: [%AST.Field{name: "Date"}]},
+      right: %AST.Literal{type: :integer, value: 2024}
+    }], "", _, _, _} = Parser.parse_filter("year(Date) eq 2024")
+  end
+
+  test "unary functions support all comparison ops" do
+    assert_parses_filter("year(Date) gt 2020")
+    assert_parses_filter("month(Date) le 6")
+    assert_parses_filter("day(Date) ne 1")
+  end
+
+  test "unary functions combined with logical operators" do
+    assert_parses_filter("tolower(Name) eq 'john' and Amount gt 100")
+    assert_parses_filter("year(Date) eq 2024 and month(Date) eq 1")
+  end
 end

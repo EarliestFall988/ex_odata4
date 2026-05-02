@@ -44,6 +44,19 @@ defmodule ExOdata4.Parser do
     {rest, [%AST.FunctionCall{name: name, args: [%AST.Field{name: field_name}, literal]}], context}
   end
 
+  defp build_unary_function_binary_op(rest, args, context, _line, _offset, func) do
+    [field_name, op, literal] = Enum.reverse(args)
+
+    {rest,
+     [
+       %AST.BinaryOp{
+         op: op,
+         left: %AST.FunctionCall{name: func, args: [%AST.Field{name: field_name}]},
+         right: literal
+       }
+     ], context}
+  end
+
   defp build_binary_op(rest, args, context, _line, _offset) do
     [field_name, op, literal] = Enum.reverse(args)
 
@@ -146,6 +159,7 @@ defmodule ExOdata4.Parser do
     choice([
       parsec(:paren_expr),
       Expressions.string_function_call(),
+      Expressions.unary_function_comparison_expr(),
       Expressions.comparison_expr()
     ])
     |> optional(
